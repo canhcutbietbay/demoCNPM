@@ -1,0 +1,113 @@
+<%- include('partials/header'); -%>
+
+<form>
+  <h2>Login</h2>
+  <label for="email">Email</label>
+  <input type="text" name="email" />
+  <div class="email error"></div>
+  <label for="password">Password</label>
+  <input type="password" name="password" />
+  <div class="password error"></div>
+  <button id="normalBtn" type="submit" name="action" value="update">
+    Login
+  </button>
+  <h2>Or</h2>
+  <button id="facebookBtn">
+    <svg
+      fill="#ffffff"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="#ffffff"
+    >
+      <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        <path
+          d="M12 2.03998C6.5 2.03998 2 6.52998 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.84998C10.44 7.33998 11.93 5.95998 14.22 5.95998C15.31 5.95998 16.45 6.14998 16.45 6.14998V8.61998H15.19C13.95 8.61998 13.56 9.38998 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96C15.9164 21.5878 18.0622 20.3855 19.6099 18.57C21.1576 16.7546 22.0054 14.4456 22 12.06C22 6.52998 17.5 2.03998 12 2.03998Z"
+        ></path>
+      </g>
+    </svg>
+    <span>Facebook</span>
+  </button>
+</form>
+
+<%- include('partials/footer'); -%>
+
+<script>
+  //load fb sdk
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: "677194394532315",
+      cookie: true,
+      xfbml: true,
+      version: "v19.0",
+    });
+
+    FB.AppEvents.logPageView();
+  };
+
+  (function (d, s, id) {
+    var js,
+      fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) {
+      return;
+    }
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  })(document, "script", "facebook-jssdk");
+  const form = document.querySelector("form");
+  const emailError = document.querySelector(".email.error");
+  const passwordError = document.querySelector(".password.error");
+
+  const facebookBtn = document.getElementById("facebookBtn");
+
+  facebookBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    FB.login(function (response) {
+      if (response.authResponse) {
+        console.log("Welcome!  Fetching your information.... ");
+        FB.api("/me", "GET", { fields: "id, email" }, function (response) {
+          console.log(response)
+        });
+      } else {
+        alert("User cancelled login or did not fully authorize.")
+      }
+    });
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    // reset errors
+    emailError.textContent = "";
+    passwordError.textContent = "";
+
+    // get values
+    const email = form.email.value;
+    const password = form.password.value;
+
+    try {
+      const res = await fetch("/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      console.log(data);
+      if (data.errors) {
+        emailError.textContent = data.errors.email;
+        passwordError.textContent = data.errors.password;
+      }
+      if (data.user) {
+        location.assign("/");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  });
+</script>
